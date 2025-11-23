@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { type AgentState, Orb } from "../components/orb";
 import { codeToHtml } from "shiki";
 
+
 type VoiceStyleId = "F1" | "F2" | "M1" | "M2";
 
 interface GenerationStats {
