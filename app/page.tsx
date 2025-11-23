@@ -16,7 +16,13 @@ interface GenerationStats {
 // Monochromatic Orb Colors for Dark Theme
 const ORB_COLORS: [string, string] = ["#E5E5E5", "#525252"];
 
-const QUOTE_TEXT = "Pain and suffering are always inevitable for a large intelligence and a deep heart. The really great men must, I think, have great sadness on earth.";
+const QUOTE_TEXT = `Nature, it seems, is the popular name for
+milliards
+and milliards
+and milliards of particles
+playing their infinite game of billiards
+and billiards
+and billiards.`;
 
 const PARAGRAPH_TEXT =
 	"A man who lies to himself, and believes his own lies becomes unable to recognize truth, either in himself or in anyone else, and he ends up losing respect for himself and for others. When he has no respect for anyone, he can no longer love, and, in order to divert himself, having no love in him, he yields to his impulses, indulges in the lowest forms of pleasure, and behaves in the end like an animal. And it all comes from lying - lying to others and to yourself.";
@@ -678,8 +684,8 @@ export default function Home() {
 							<p className="mt-1">All rights reserved.</p>
 						</div>
 						<div className="text-right">
-							<p>Made with Love</p>
-							<p className="mt-1">in The Cloud</p>
+							<p>Made with 🖤</p>
+							<p className="mt-1">Powered by ▲ + ONNX  and  SuperTonic</p>
 						</div>
 					</div>
 				</div>
