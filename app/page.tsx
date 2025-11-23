@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type AgentState, Orb } from "../components/orb";
+import { codeToHtml } from "shiki";
 
 type VoiceStyleId = "F1" | "F2" | "M1" | "M2";
 
@@ -20,6 +21,151 @@ const QUOTE_TEXT = "Pain and suffering are always inevitable for a large intelli
 const PARAGRAPH_TEXT =
 	"A man who lies to himself, and believes his own lies becomes unable to recognize truth, either in himself or in anyone else, and he ends up losing respect for himself and for others. When he has no respect for anyone, he can no longer love, and, in order to divert himself, having no love in him, he yields to his impulses, indulges in the lowest forms of pleasure, and behaves in the end like an animal. And it all comes from lying - lying to others and to yourself.";
 
+// API Documentation Snippets
+const API_ENDPOINT = "https://voices.aryank.space/api/tts";
+
+const CODE_SNIPPETS = {
+	javascript: `import fs from 'node:fs';
+
+const response = await fetch("${API_ENDPOINT}", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    text: "Hello world",
+    voiceStyle: "M1",
+    totalStep: 5,
+    speed: 1.0
+  })
+});
+
+const buffer = await response.arrayBuffer();
+fs.writeFileSync("speech.wav", Buffer.from(buffer));
+`,
+	python: `import requests
+
+response = requests.post(
+    "${API_ENDPOINT}",
+    json={
+        "text": "Hello world",
+        "voiceStyle": "M1",
+        "totalStep": 5,
+        "speed": 1.0
+    }
+)
+
+with open("speech.wav", "wb") as f:
+    f.write(response.content)`,
+	php: `<?php
+$ch = curl_init("${API_ENDPOINT}");
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "text" => "Hello world",
+    "voiceStyle" => "M1",
+    "totalStep" => 5,
+    "speed" => 1.0
+]));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$audio = curl_exec($ch);
+file_put_contents("speech.wav", $audio);
+curl_close($ch);
+?>`,
+	go: `package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"net/http"
+	"os"
+)
+
+func main() {
+	data := map[string]interface{}{
+		"text":       "Hello world",
+		"voiceStyle": "M1",
+		"totalStep":  5,
+		"speed":      1.0,
+	}
+	jsonData, _ := json.Marshal(data)
+
+	resp, _ := http.Post("${API_ENDPOINT}", "application/json", bytes.NewBuffer(jsonData))
+	defer resp.Body.Close()
+
+	out, _ := os.Create("speech.wav")
+	defer out.Close()
+	io.Copy(out, resp.Body)
+}`,
+	rust: `use std::fs::File;
+use std::io::copy;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+    let resp = client.post("${API_ENDPOINT}")
+        .json(&serde_json::json!({
+            "text": "Hello world",
+            "voiceStyle": "M1",
+            "totalStep": 5,
+            "speed": 1.0
+        }))
+        .send()
+        .await?;
+
+    let mut content = std::io::Cursor::new(resp.bytes().await?);
+    let mut file = File::create("speech.wav")?;
+    copy(&mut content, &mut file)?;
+    Ok(())
+}`,
+};
+
+function CodeBlock({ code, lang }: { code: string; lang: string }) {
+	const [html, setHtml] = useState(code);
+	const [copied, setCopied] = useState(false);
+
+	useEffect(() => {
+		async function highlight() {
+			try {
+				const out = await codeToHtml(code, {
+					lang,
+					theme: "vitesse-black",
+				});
+				setHtml(out);
+			} catch (e) {
+				console.error("Syntax highlighting failed:", e);
+				setHtml(code); // Fallback
+			}
+		}
+		highlight();
+	}, [code, lang]);
+
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(code);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch (err) {
+			console.error("Failed to copy:", err);
+		}
+	};
+
+	return (
+		<div className="relative group rounded-lg overflow-hidden bg-black border border-neutral-800">
+			<div
+				className="font-mono text-sm leading-relaxed overflow-x-auto p-6"
+				dangerouslySetInnerHTML={{ __html: html }}
+			/>
+			<button
+				onClick={handleCopy}
+				className={`absolute top-4 right-4 px-3 py-1.5 text-xs uppercase tracking-widest border rounded transition-all duration-200 ${
+					copied ? "bg-white text-black border-white opacity-100" : "bg-black text-neutral-400 border-neutral-800 opacity-0 group-hover:opacity-100 hover:text-white hover:border-white"
+				}`}
+			>
+				{copied ? "Copied" : "Copy"}
+			</button>
+		</div>
+	);
+}
+
 export default function Home() {
 	const [text, setText] = useState<string>(QUOTE_TEXT);
 	const [voiceStyle, setVoiceStyle] = useState<VoiceStyleId>("F1");
@@ -29,6 +175,7 @@ export default function Home() {
 	const [error, setError] = useState<string | null>(null);
 	const [stats, setStats] = useState<GenerationStats | null>(null);
 	const [agentState, setAgentState] = useState<AgentState>("listening");
+	const [activeTab, setActiveTab] = useState<keyof typeof CODE_SNIPPETS>("javascript");
 
 	const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -319,6 +466,121 @@ export default function Home() {
 					<h3 className="text-white mb-2 opacity-50">Time</h3>
 					<p className="text-white">{stats?.totalTimeSeconds ? `${stats.totalTimeSeconds.toFixed(2)}s` : "--"}</p>
 				</div>
+			</div>
+
+			{/* Documentation & Methodology Section */}
+			<div className="border-t border-neutral-800 grid grid-cols-1 lg:grid-cols-2">
+				{/* Performance Chart */}
+				<div className="p-8 md:p-12 border-r border-neutral-800">
+					<h2 className="text-3xl md:text-4xl font-light mb-8 text-neutral-100 tracking-tight">Performance</h2>
+					<div className="space-y-6 text-xs uppercase tracking-widest font-mono">
+						{/* Benchmark Items */}
+						{[
+							{ name: "Ours (RTX 4090)", score: 12164, color: "bg-blue-600", width: "100%" },
+							{ name: "Ours (M4 Pro - WebGPU)", score: 2509, color: "bg-blue-500", width: "25%" },
+							{ name: "Ours (M4 Pro - CPU)", score: 1263, color: "bg-blue-400", width: "15%" },
+							{ name: "Flash v2.5", score: 287, color: "bg-neutral-700", width: "5%" },
+							{ name: "TTS-1", score: 82, color: "bg-neutral-800", width: "2%" },
+							{ name: "Gemini 2.5 Flash TTS", score: 24, color: "bg-neutral-900", width: "1%" },
+						].map((item) => (
+							<div
+								key={item.name}
+								className="space-y-2"
+							>
+								<div className="flex justify-between text-neutral-400">
+									<span>{item.name}</span>
+									<span>{item.score}</span>
+								</div>
+								<div className="h-2 w-full bg-neutral-900 rounded-full overflow-hidden">
+									<div
+										className={`h-full ${item.color}`}
+										style={{ width: item.width }}
+									></div>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+
+				{/* Methodology Text */}
+				<div className="p-8 md:p-12 flex flex-col justify-center bg-neutral-900/10">
+					<h2 className="text-3xl md:text-4xl font-light mb-8 text-neutral-100 tracking-tight">Methodology</h2>
+					<div className="space-y-6 text-neutral-400 font-light text-lg leading-relaxed">
+						<p>
+							Our model utilizes a custom-trained architecture optimized for on-device inference. By leveraging advanced quantization techniques and the ONNX runtime, we achieve
+							state-of-the-art performance across a wide range of hardware configurations.
+						</p>
+						<p>
+							Training involved a diverse dataset of high-fidelity speech, processed to ensure robustness and natural prosody. The result is a lightweight, low-latency synthesis engine
+							that operates entirely locally, preserving user privacy without sacrificing quality.
+						</p>
+						<p>
+							This hybrid approach combines the flexibility of deep learning with the efficiency of edge computing, enabling real-time voice generation even on consumer-grade CPUs and
+							mobile accelerators.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			{/* API Documentation Section */}
+			<div className="border-t border-neutral-800">
+				<div className="p-8 md:p-12">
+					<div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+						<div>
+							<h2 className="text-3xl md:text-4xl font-light text-neutral-100 tracking-tight">API Integration</h2>
+							<p className="mt-2 text-neutral-500">Integrate our TTS engine directly into your applications.</p>
+						</div>
+						<div className="flex items-center gap-2 bg-neutral-900/50 px-4 py-2 rounded border border-neutral-800 font-mono text-sm text-blue-400 break-all">
+							<span className="text-neutral-500">POST</span>
+							{API_ENDPOINT}
+						</div>
+					</div>
+
+					{/* Language Tabs */}
+					<div className="mb-6 flex flex-wrap gap-2 border-b border-neutral-800 pb-1">
+						{(Object.keys(CODE_SNIPPETS) as Array<keyof typeof CODE_SNIPPETS>).map((lang) => (
+							<button
+								key={lang}
+								onClick={() => setActiveTab(lang)}
+								className={`px-4 py-2 text-xs uppercase tracking-widest transition-colors ${
+									activeTab === lang ? "text-white border-b-2 border-white -mb-1.5" : "text-neutral-500 hover:text-neutral-300"
+								}`}
+							>
+								{lang === "javascript" ? "JavaScript" : lang}
+							</button>
+						))}
+					</div>
+
+					{/* Code Display */}
+					<CodeBlock
+						code={CODE_SNIPPETS[activeTab]}
+						lang={activeTab}
+					/>
+				</div>
+			</div>
+
+			{/* Footer Credits */}
+			<div className="border-t border-neutral-800 p-8 md:p-12 text-center text-neutral-500 text-sm">
+				<p>
+					Made with Love by{" "}
+					<a
+						href="https://aryank.space"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-neutral-300 hover:text-white transition-colors"
+					>
+						BLANK
+					</a>{" "}
+					and{" "}
+					<a
+						href="https://janviw.space"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-neutral-300 hover:text-white transition-colors"
+					>
+						COSMéra
+					</a>
+				</p>
 			</div>
 		</div>
 	);

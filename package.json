@@ -22,6 +22,7 @@
     "postprocessing": "^6.38.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "shiki": "^3.15.0",
     "tailwind-merge": "^3.4.0",
     "three": "^0.181.2",
     "tw-merge": "0.0.1-alpha.3"

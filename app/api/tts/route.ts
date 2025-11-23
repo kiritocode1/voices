@@ -54,7 +54,7 @@ export async function POST(request: Request): Promise<Response> {
 			speed,
 		});
 
-		return new Response(wavBuffer, {
+		return new Response(wavBuffer as BodyInit, {
 			status: 200,
 			headers: {
 				"Content-Type": "audio/wav",
