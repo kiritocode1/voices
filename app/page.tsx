@@ -666,7 +666,7 @@ export default function Home() {
 										rel="noopener noreferrer"
 										className="block text-xl text-neutral-200 hover:text-white transition-colors"
 									>
-										Janvi W (COSMéra)
+										Janvi W (COSMèra)
 									</a>
 								</div>
 							</div>
@@ -685,7 +685,7 @@ export default function Home() {
 						</div>
 						<div className="text-right">
 							<p>Made with 🖤</p>
-							<p className="mt-1">Powered by ▲ + ONNX  and  SuperTonic</p>
+							<p className="mt-1">Powered by ▲ + ONNX and SuperTonic</p>
 						</div>
 					</div>
 				</div>
