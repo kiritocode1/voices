@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { type AgentState, Orb } from "../components/orb";
 import { codeToHtml } from "shiki";
 
-
 type VoiceStyleId = "F1" | "F2" | "M1" | "M2";
 
 interface GenerationStats {
@@ -469,6 +468,19 @@ export default function Home() {
 				</div>
 			</div>
 
+			{/* Download Section */}
+			{stats?.audioUrl && (
+				<div className="border-t border-neutral-800">
+					<a
+						href={stats.audioUrl}
+						download={`voice-${Date.now()}.wav`}
+						className="block w-full py-6 text-center text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-colors"
+					>
+						Download Audio
+					</a>
+				</div>
+			)}
+
 			{/* Documentation & Methodology Section */}
 			<div className="border-t border-neutral-800 grid grid-cols-1 lg:grid-cols-2">
 				{/* Performance Chart */}
@@ -523,65 +535,154 @@ export default function Home() {
 				</div>
 			</div>
 
-			{/* API Documentation Section */}
-			<div className="border-t border-neutral-800">
-				<div className="p-8 md:p-12">
-					<div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+			{/* Bento Grid: API Integration & Clone Locally */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 border-t border-neutral-800">
+				{/* API Integration */}
+				<div className="p-8 md:p-12 border-r border-neutral-800">
+					<div className="flex flex-col justify-between h-full gap-12">
 						<div>
-							<h2 className="text-3xl md:text-4xl font-light text-neutral-100 tracking-tight">API Integration</h2>
-							<p className="mt-2 text-neutral-500">Integrate our TTS engine directly into your applications.</p>
-						</div>
-						<div className="flex items-center gap-2 bg-neutral-900/50 px-4 py-2 rounded border border-neutral-800 font-mono text-sm text-blue-400 break-all">
-							<span className="text-neutral-500">POST</span>
-							{API_ENDPOINT}
+							<div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+								<div>
+									<h2 className="text-3xl md:text-4xl font-light text-neutral-100 tracking-tight">API Integration</h2>
+									<p className="mt-2 text-neutral-500">Integrate our TTS engine directly.</p>
+								</div>
+								<div className="flex items-center gap-2 bg-neutral-900/50 px-3 py-1.5 rounded border border-neutral-800 font-mono text-xs text-blue-400 break-all">
+									<span className="text-neutral-500">POST</span>
+									{API_ENDPOINT}
+								</div>
+							</div>
+
+							{/* Language Tabs */}
+							<div className="mb-6 flex flex-wrap gap-2 border-b border-neutral-800 pb-1">
+								{(Object.keys(CODE_SNIPPETS) as Array<keyof typeof CODE_SNIPPETS>).map((lang) => (
+									<button
+										key={lang}
+										onClick={() => setActiveTab(lang)}
+										className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-colors ${
+											activeTab === lang ? "text-white border-b-2 border-white -mb-1.5" : "text-neutral-500 hover:text-neutral-300"
+										}`}
+									>
+										{lang === "javascript" ? "JS" : lang}
+									</button>
+								))}
+							</div>
+
+							<CodeBlock
+								code={CODE_SNIPPETS[activeTab]}
+								lang={activeTab}
+							/>
 						</div>
 					</div>
+				</div>
 
-					{/* Language Tabs */}
-					<div className="mb-6 flex flex-wrap gap-2 border-b border-neutral-800 pb-1">
-						{(Object.keys(CODE_SNIPPETS) as Array<keyof typeof CODE_SNIPPETS>).map((lang) => (
-							<button
-								key={lang}
-								onClick={() => setActiveTab(lang)}
-								className={`px-4 py-2 text-xs uppercase tracking-widest transition-colors ${
-									activeTab === lang ? "text-white border-b-2 border-white -mb-1.5" : "text-neutral-500 hover:text-neutral-300"
-								}`}
+				{/* Clone Locally */}
+				<div className="p-8 md:p-12 flex flex-col justify-between bg-neutral-900/10">
+					<div className="space-y-8">
+						<div>
+							<h2 className="text-3xl md:text-4xl font-light text-neutral-100 tracking-tight">Clone Locally</h2>
+							<p className="mt-4 text-neutral-400 leading-relaxed">
+								<span className="text-yellow-500 block mb-2 text-xs uppercase tracking-widest">Deployment Notice</span>
+								We are currently working to resolve ONNX Runtime deployment issues on Vercel Serverless. For the best experience and guaranteed performance, we recommend cloning the
+								repository and running it locally.
+							</p>
+						</div>
+
+						<div>
+							<p className="text-xs text-neutral-500 uppercase tracking-widest mb-4">Repository</p>
+							<a
+								href="https://github.com/kiritocode1/voices"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-xl md:text-2xl font-light text-blue-400 hover:text-blue-300 transition-colors break-all"
 							>
-								{lang === "javascript" ? "JavaScript" : lang}
-							</button>
-						))}
-					</div>
+								github.com/kiritocode1/voices
+							</a>
+						</div>
 
-					{/* Code Display */}
-					<CodeBlock
-						code={CODE_SNIPPETS[activeTab]}
-						lang={activeTab}
-					/>
+						<CodeBlock
+							code="git clone https://github.com/kiritocode1/voices"
+							lang="bash"
+						/>
+					</div>
 				</div>
 			</div>
 
-			{/* Footer Credits */}
-			<div className="border-t border-neutral-800 p-8 md:p-12 text-center text-neutral-500 text-sm">
-				<p>
-					Made with Love by{" "}
-					<a
-						href="https://aryank.space"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-neutral-300 hover:text-white transition-colors"
-					>
-						BLANK
-					</a>{" "}
-					and{" "}
-					<a
-						href="https://janviw.space"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-neutral-300 hover:text-white transition-colors"
-					>
-						COSMéra
-					</a>
-				</p>
+			{/* Footer Grid: Image & Info */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 border-t border-neutral-800">
+				{/* Left Column: Decorative Image */}
+				<div className="relative overflow-hidden min-h-[500px] flex items-center justify-center bg-neutral-900/20 border-b lg:border-b-0 lg:border-r border-neutral-800">
+					{/* Decorative Circles */}
+					<div className="absolute top-[10%] left-[15%] w-32 h-32 bg-neutral-800 rounded-full opacity-50 mix-blend-overlay"></div>
+					<div className="absolute bottom-[20%] right-[10%] w-64 h-64 bg-neutral-700 rounded-full opacity-30 mix-blend-overlay"></div>
+					<div className="absolute top-[40%] right-[25%] w-16 h-16 bg-neutral-600 rounded-full opacity-40 mix-blend-overlay"></div>
+					<div className="absolute bottom-[10%] left-[30%] w-24 h-24 bg-neutral-800 rounded-full opacity-60 mix-blend-overlay"></div>
+
+					{/* Large background circles */}
+					<div className="absolute top-0 left-0 w-96 h-96 bg-neutral-800/10 rounded-full -translate-x-1/3 -translate-y-1/3 blur-3xl"></div>
+					<div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-neutral-800/10 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl"></div>
+
+					<div className="relative z-10 p-12 transform hover:scale-105 transition-transform duration-700">
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img
+							src="/speaker.png"
+							alt="Speaker"
+							className="max-w-md w-full opacity-90 drop-shadow-2xl grayscale hover:grayscale-0 transition-all duration-500"
+						/>
+					</div>
+				</div>
+
+				{/* Right Column: Project Info & Credits */}
+				<div className="p-8 md:p-12 flex flex-col justify-between bg-black">
+					<div className="space-y-12">
+						<div>
+							<h2 className="text-3xl md:text-4xl font-light text-neutral-100 tracking-tight mb-6">About Voices</h2>
+							<p className="text-neutral-400 leading-relaxed text-lg font-light">
+								Voices is a lightning-fast, on-device text-to-speech system designed for extreme performance with minimal computational overhead. Powered by ONNX Runtime, it runs
+								entirely on your device—no cloud, no API calls, no privacy concerns.
+							</p>
+						</div>
+
+						<div className="space-y-6">
+							<div>
+								<h3 className="text-xs text-neutral-500 uppercase tracking-widest mb-2">Created By</h3>
+								<div className="space-y-1">
+									<a
+										href="https://aryank.space"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="block text-xl text-neutral-200 hover:text-white transition-colors"
+									>
+										Aryan K (blank)
+									</a>
+									<a
+										href="https://janviw.space"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="block text-xl text-neutral-200 hover:text-white transition-colors"
+									>
+										Janvi W (COSMéra)
+									</a>
+								</div>
+							</div>
+
+							<div>
+								<h3 className="text-xs text-neutral-500 uppercase tracking-widest mb-2">License</h3>
+								<p className="text-neutral-400">MIT License (Code) / OpenRAIL-M (Weights)</p>
+							</div>
+						</div>
+					</div>
+
+					<div className="mt-12 pt-12 border-t border-neutral-800 flex justify-between items-end text-xs text-neutral-500 uppercase tracking-widest">
+						<div>
+							<p>© 2025 Blank Technologies Inc.</p>
+							<p className="mt-1">All rights reserved.</p>
+						</div>
+						<div className="text-right">
+							<p>Made with Love</p>
+							<p className="mt-1">in The Cloud</p>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
