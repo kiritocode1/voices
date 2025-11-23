@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ["onnxruntime-node"],
+  outputFileTracingIncludes: {
+    "/api/tts": ["./model/**/*"],
+  },
 };
 
 export default nextConfig;
