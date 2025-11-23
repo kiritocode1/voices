@@ -1,5 +1,8 @@
 import { synthesizeToWavBuffer, type VoiceStyleId } from "../../../lib/serverTts";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 interface TtsRequestBody {
 	text: string;
 	voiceStyle: VoiceStyleId;
@@ -16,13 +19,10 @@ export async function POST(request: Request): Promise<Response> {
 		const json = (await request.json()) as Partial<TtsRequestBody>;
 
 		if (typeof json.text !== "string" || json.text.trim().length === 0) {
-			return new Response(
-				JSON.stringify({ error: "Field `text` must be a non-empty string." }),
-				{
-					status: 400,
-					headers: { "Content-Type": "application/json" },
-				},
-			);
+			return new Response(JSON.stringify({ error: "Field `text` must be a non-empty string." }), {
+				status: 400,
+				headers: { "Content-Type": "application/json" },
+			});
 		}
 
 		if (typeof json.voiceStyle !== "string" || !isVoiceStyleId(json.voiceStyle)) {
@@ -37,15 +37,9 @@ export async function POST(request: Request): Promise<Response> {
 			);
 		}
 
-		const totalStep =
-			typeof json.totalStep === "number" && Number.isFinite(json.totalStep)
-				? Math.max(1, Math.floor(json.totalStep))
-				: 5;
+		const totalStep = typeof json.totalStep === "number" && Number.isFinite(json.totalStep) ? Math.max(1, Math.floor(json.totalStep)) : 5;
 
-		const speed =
-			typeof json.speed === "number" && Number.isFinite(json.speed)
-				? json.speed
-				: 1.05;
+		const speed = typeof json.speed === "number" && Number.isFinite(json.speed) ? json.speed : 1.05;
 
 		const { wavBuffer, durationSeconds, sampleRate } = await synthesizeToWavBuffer({
 			text: json.text,
@@ -65,8 +59,7 @@ export async function POST(request: Request): Promise<Response> {
 			},
 		});
 	} catch (error) {
-		const message =
-			error instanceof Error ? error.message : "Unknown error during synthesis.";
+		const message = error instanceof Error ? error.message : "Unknown error during synthesis.";
 		console.error("TTS API error:", error);
 		return new Response(JSON.stringify({ error: message }), {
 			status: 500,
@@ -74,5 +67,3 @@ export async function POST(request: Request): Promise<Response> {
 		});
 	}
 }
-
-
