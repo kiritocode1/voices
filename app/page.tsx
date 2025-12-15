@@ -660,14 +660,6 @@ export default function Home() {
 									>
 										Aryan K (blank)
 									</a>
-									<a
-										href="https://janviw.space"
-										target="_blank"
-										rel="noopener noreferrer"
-										className="block text-xl text-neutral-200 hover:text-white transition-colors"
-									>
-										Janvi W (COSMèra)
-									</a>
 								</div>
 							</div>
 
