@@ -19,6 +19,7 @@
     "leva": "^0.10.1",
     "next": "16.0.10",
     "onnxruntime-node": "^1.23.2",
+    "onnxruntime-web": "^1.23.2",
     "postprocessing": "^6.38.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",

@@ -27,7 +27,7 @@ and billiards.`;
 const PARAGRAPH_TEXT =
 	"A man who lies to himself, and believes his own lies becomes unable to recognize truth, either in himself or in anyone else, and he ends up losing respect for himself and for others. When he has no respect for anyone, he can no longer love, and, in order to divert himself, having no love in him, he yields to his impulses, indulges in the lowest forms of pleasure, and behaves in the end like an animal. And it all comes from lying - lying to others and to yourself.";
 
-// API Documentation Snippets
+// API Documentation Snippets (Legacy / Reference)
 const API_ENDPOINT = "https://voices.aryank.space/api/tts";
 
 const CODE_SNIPPETS = {
@@ -204,6 +204,19 @@ export default function Home() {
 		}
 	}, [stats?.audioUrl]);
 
+	// Worker reference
+	const workerRef = useRef<Worker | null>(null);
+
+	useEffect(() => {
+		// Initialize the worker
+		const worker = new Worker(new URL("./workers/tts.worker.ts", import.meta.url));
+		workerRef.current = worker;
+
+		return () => {
+			worker.terminate();
+		};
+	}, []);
+
 	const canSubmit = useMemo<boolean>(() => !isLoading && text.trim().length > 0, [isLoading, text]);
 
 	async function handleGenerate(event: React.FormEvent | React.MouseEvent): Promise<void> {
@@ -216,44 +229,58 @@ export default function Home() {
 
 		const startedAt = Date.now();
 
-		try {
-			const response = await fetch("/api/tts", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ text, voiceStyle, totalStep, speed }),
-			});
-
-			if (!response.ok) {
-				const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-				const message = payload?.error ?? `TTS request failed with status ${response.status}.`;
-				throw new Error(message);
-			}
-
-			const durationHeader = response.headers.get("X-Audio-Duration-Seconds");
-			const sampleRateHeader = response.headers.get("X-Audio-Sample-Rate");
-			const blob = await response.blob();
-			const url = URL.createObjectURL(blob);
-
-			if (stats?.audioUrl) {
-				URL.revokeObjectURL(stats.audioUrl);
-			}
-
-			const finishedAt = Date.now();
-			const totalTimeSeconds = (finishedAt - startedAt) / 1000;
-
-			setStats({
-				audioUrl: url,
-				durationSeconds: durationHeader ? Number.parseFloat(durationHeader) : null,
-				sampleRate: sampleRateHeader ? Number.parseInt(sampleRateHeader, 10) : null,
-				totalTimeSeconds,
-			});
-		} catch (err) {
-			const message = err instanceof Error ? err.message : "Unexpected error while generating speech.";
-			setError(message);
-			setAgentState("listening");
-		} finally {
+		if (!workerRef.current) {
+			setError("Worker not initialized.");
 			setIsLoading(false);
+			return;
 		}
+
+		// Handle worker response
+		const handleMessage = (event: MessageEvent) => {
+			const { type, payload, error } = event.data;
+
+			if (type === "SUCCESS") {
+				const { wavBuffer, sampleRate, durationSeconds } = payload;
+				const blob = new Blob([wavBuffer], { type: "audio/wav" });
+				const url = URL.createObjectURL(blob);
+
+				if (stats?.audioUrl) {
+					URL.revokeObjectURL(stats.audioUrl);
+				}
+
+				const finishedAt = Date.now();
+				const totalTimeSeconds = (finishedAt - startedAt) / 1000;
+
+				setStats({
+					audioUrl: url,
+					durationSeconds,
+					sampleRate,
+					totalTimeSeconds,
+				});
+				setIsLoading(false);
+				setAgentState("listening"); // Will switch to talking when audio plays
+			} else if (type === "ERROR") {
+				setError(error || "Unknown worker error");
+				setIsLoading(false);
+				setAgentState("listening");
+			}
+			
+			// Cleanup listener
+			workerRef.current?.removeEventListener("message", handleMessage);
+		};
+
+		workerRef.current.addEventListener("message", handleMessage);
+
+		// Send request
+		workerRef.current.postMessage({
+			type: "SYNTHESIZE",
+			options: {
+				text,
+				voiceStyle,
+				totalStep: Math.floor(totalStep),
+				speed,
+			},
+		});
 	}
 
 	return (
