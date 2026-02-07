@@ -298,6 +298,59 @@ class TextToSpeech {
 	}
 }
 
+async function fetchArrayBuffer(path: string): Promise<ArrayBuffer> {
+    const url = getAbsoluteUrl(path);
+
+    // Hardcoded list of split models for efficiency
+    const splitModels = ["/models/onnx/vector_estimator.onnx"];
+    
+    if (splitModels.includes(path)) {
+       return fetchMergedParts(path);
+    }
+
+    try {
+        const res = await fetch(url);
+        if (res.ok) {
+            return await res.arrayBuffer();
+        }
+        throw new Error(`Failed to fetch ${url}: ${res.status}`);
+    } catch (e) {
+        throw e;
+    }
+}
+
+async function fetchMergedParts(basePath: string): Promise<ArrayBuffer> {
+    const parts: ArrayBuffer[] = [];
+    let partNum = 0;
+    
+    while (true) {
+        const partUrl = getAbsoluteUrl(`${basePath}.part${partNum}`);
+        try {
+            const res = await fetch(partUrl);
+            if (!res.ok) break; // Stop when we run out of parts
+            parts.push(await res.arrayBuffer());
+            partNum++;
+        } catch (e) {
+            break;
+        }
+    }
+    
+    if (parts.length === 0) {
+         throw new Error(`No parts found for ${basePath}`);
+    }
+
+    // Combine parts
+    const totalLength = parts.reduce((acc, part) => acc + part.byteLength, 0);
+    const combined = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const part of parts) {
+        combined.set(new Uint8Array(part), offset);
+        offset += part.byteLength;
+    }
+    
+    return combined.buffer;
+}
+
 function getAbsoluteUrl(path: string): string {
     if (typeof globalThis !== "undefined" && globalThis.location) {
         return new URL(path, globalThis.location.origin).href;
@@ -324,9 +377,10 @@ async function loadTextProcessor(): Promise<UnicodeProcessor> {
 }
 
 async function loadOnnx(path: string, options: ort.InferenceSession.SessionOptions): Promise<ort.InferenceSession> {
-    // onnxruntime-web loads models from URL if passed as string
-    const url = getAbsoluteUrl(path);
-	return ort.InferenceSession.create(url, options);
+    // Fetch buffer (handles split files automatically)
+    const buffer = await fetchArrayBuffer(path);
+    // Pass buffer to ONNX Runtime
+	return ort.InferenceSession.create(buffer, options);
 }
 
 // Global cache for models to avoid reloading
@@ -342,10 +396,10 @@ async function loadTextToSpeechInternal(): Promise<{ textToSpeech: TextToSpeech;
     };
 
 	const [dpOrt, textEncOrt, vectorEstOrt, vocoderOrt] = await Promise.all([
-		loadOnnx("/models/onnx/duration_predictor_quant.onnx", sessionOptions),
-		loadOnnx("/models/onnx/text_encoder_quant.onnx", sessionOptions),
-		loadOnnx("/models/onnx/vector_estimator_quant.onnx", sessionOptions),
-		loadOnnx("/models/onnx/vocoder_quant.onnx", sessionOptions),
+		loadOnnx("/models/onnx/duration_predictor.onnx", sessionOptions),
+		loadOnnx("/models/onnx/text_encoder.onnx", sessionOptions),
+		loadOnnx("/models/onnx/vector_estimator.onnx", sessionOptions),
+		loadOnnx("/models/onnx/vocoder.onnx", sessionOptions),
 	]);
 
 	const textProcessor = await loadTextProcessor();
