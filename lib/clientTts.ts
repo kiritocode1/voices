@@ -342,10 +342,10 @@ async function loadTextToSpeechInternal(): Promise<{ textToSpeech: TextToSpeech;
     };
 
 	const [dpOrt, textEncOrt, vectorEstOrt, vocoderOrt] = await Promise.all([
-		loadOnnx("/models/onnx/duration_predictor.onnx", sessionOptions),
-		loadOnnx("/models/onnx/text_encoder.onnx", sessionOptions),
-		loadOnnx("/models/onnx/vector_estimator.onnx", sessionOptions),
-		loadOnnx("/models/onnx/vocoder.onnx", sessionOptions),
+		loadOnnx("/models/onnx/duration_predictor_quant.onnx", sessionOptions),
+		loadOnnx("/models/onnx/text_encoder_quant.onnx", sessionOptions),
+		loadOnnx("/models/onnx/vector_estimator_quant.onnx", sessionOptions),
+		loadOnnx("/models/onnx/vocoder_quant.onnx", sessionOptions),
 	]);
 
 	const textProcessor = await loadTextProcessor();
