@@ -1,5 +1,5 @@
 import onnx
-from onnxruntime.quantization import quantize_dynamic, QuantType
+from onnxconverter_common import float16
 
 models = [
     "public/models/onnx/vector_estimator.onnx",
@@ -8,20 +8,18 @@ models = [
     "public/models/onnx/duration_predictor.onnx"
 ]
 
-def quantize_model(model_path):
+def convert_to_float16(model_path):
     output_path = model_path.replace(".onnx", "_quant.onnx")
-    print(f"Quantizing {model_path} -> {output_path}...")
+    print(f"Converting {model_path} -> {output_path} (Float16)...")
     
     try:
-        quantize_dynamic(
-            model_input=model_path,
-            model_output=output_path,
-            weight_type=QuantType.QUInt8
-        )
-        print(f"Successfully quantized {model_path}")
+        model = onnx.load(model_path)
+        model_fp16 = float16.convert_float_to_float16(model)
+        onnx.save(model_fp16, output_path)
+        print(f"Successfully converted {model_path}")
     except Exception as e:
-        print(f"Failed to quantize {model_path}: {e}")
+        print(f"Failed to convert {model_path}: {e}")
 
 if __name__ == "__main__":
     for model in models:
-        quantize_model(model)
+        convert_to_float16(model)
