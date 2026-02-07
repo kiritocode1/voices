@@ -298,7 +298,15 @@ class TextToSpeech {
 	}
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
+function getAbsoluteUrl(path: string): string {
+    if (typeof globalThis !== "undefined" && globalThis.location) {
+        return new URL(path, globalThis.location.origin).href;
+    }
+    return path;
+}
+
+async function fetchJson<T>(path: string): Promise<T> {
+    const url = getAbsoluteUrl(path);
 	const res = await fetch(url);
 	if (!res.ok) {
 		throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
@@ -315,8 +323,9 @@ async function loadTextProcessor(): Promise<UnicodeProcessor> {
 	return new UnicodeProcessor(indexer);
 }
 
-async function loadOnnx(url: string, options: ort.InferenceSession.SessionOptions): Promise<ort.InferenceSession> {
+async function loadOnnx(path: string, options: ort.InferenceSession.SessionOptions): Promise<ort.InferenceSession> {
     // onnxruntime-web loads models from URL if passed as string
+    const url = getAbsoluteUrl(path);
 	return ort.InferenceSession.create(url, options);
 }
 

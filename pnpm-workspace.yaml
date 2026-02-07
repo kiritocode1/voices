@@ -1,0 +1,5 @@
+onlyBuiltDependencies:
+  - onnxruntime-node
+  - protobufjs
+  - sharp
+  - unrs-resolver
